@@ -1,0 +1,32 @@
+name: Update Major IPO Calendar
+on:
+  schedule:
+    - cron: '53 */3 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: major-ipo-calendar-write
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Test calendar
+        run: python -m unittest -v
+      - name: Generate major IPO calendar
+        run: python major_ipo.py
+      - name: Publish calendar
+        run: |
+          set -eu
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add dates.json major-ipo.ics source_status.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Update major IPO calendar'
+          git push
