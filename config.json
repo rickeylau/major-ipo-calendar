@@ -1,0 +1,9 @@
+{
+  "min_offer_usd": 1000000000,
+  "watch_names": ["Anthropic", "OpenAI", "Databricks", "Stripe", "Anduril"],
+  "exclude_symbols": [],
+  "manual_events": [
+    {"id":"anthropic-pricing","symbol":"ANT","name":"Anthropic","date":"2026-11-18","kind":"pricing","status":"expected","offer_usd":61050000000,"price":"70–78 USD","source":"https://www.sec.gov/Archives/edgar/data/2130357/000162828026073040/anthropicpbc-fwpxeeaprospea.htm","verified_on":"2026-11-16"},
+    {"id":"anthropic-listing","symbol":"ANT","name":"Anthropic","date":"2026-11-19","kind":"listing","status":"expected","offer_usd":61050000000,"price":"70–78 USD","source":"https://www.sec.gov/Archives/edgar/data/2130357/000162828026073040/anthropicpbc-fwpxeeaprospea.htm","verified_on":"2026-11-16"}
+  ]
+}
