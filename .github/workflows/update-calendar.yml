@@ -1,26 +1,38 @@
+
 name: Update Major IPO Calendar
+
 on:
   schedule:
     - cron: '53 */3 * * *'
   workflow_dispatch:
+
 permissions:
   contents: write
+
 concurrency:
   group: major-ipo-calendar-write
   cancel-in-progress: false
+
 jobs:
   update:
     runs-on: ubuntu-24.04
     timeout-minutes: 8
+
     steps:
       - uses: actions/checkout@v6
+
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+
       - name: Test calendar
         run: python -m unittest -v
+
       - name: Generate major IPO calendar
+        env:
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
         run: python major_ipo.py
+
       - name: Publish calendar
         run: |
           set -eu
