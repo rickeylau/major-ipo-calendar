@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Select large US IPOs. Nasdaq calendar dates are not confirmed debut times."""
-import argparse, hashlib, json, re, time
+import argparse, hashlib, json, re, time, os
+from calendar import monthrange
+from urllib.error import HTTPError, URLError
+from urllib.request import build_opener, HTTPRedirectHandler
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from urllib.request import Request, urlopen
@@ -9,6 +12,8 @@ from zoneinfo import ZoneInfo
 ROOT = Path(__file__).resolve().parent
 NASDAQ = 'https://api.nasdaq.com/api/ipo/calendar'
 NASDAQ_PAGE = 'https://www.nasdaq.com/market-activity/ipos'
+FINNHUB = 'https://finnhub.io/api/v1/calendar/ipo'
+FINNHUB_PAGE = 'https://finnhub.io/docs/api/ipo-calendar'
 ET = ZoneInfo('America/New_York')
 
 def read_json(path):
@@ -84,6 +89,58 @@ def fetch_month(month):
             if i==2: raise
             time.sleep((2,5)[i])
 
+class NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+def fetch_finnhub(month, token):
+    year, mon = map(int, month.split('-'))
+    start = date(year, mon, 1)
+    end = date(year, mon, monthrange(year, mon)[1])
+    url = FINNHUB + '?' + urlencode({'from':start.isoformat(), 'to':end.isoformat()})
+    req = Request(url, headers={'X-Finnhub-Token':token, 'Accept':'application/json', 'User-Agent':'MajorIPOCalendar/1.1'})
+    for attempt in range(3):
+        print(f'Finnhub IPO {month}, attempt {attempt+1}/3', flush=True)
+        try:
+            with build_opener(NoRedirect()).open(req, timeout=20) as r:
+                raw = r.read(8_000_001)
+            if len(raw)>8_000_000: raise ValueError('Response too large')
+            return json.loads(raw)
+        except HTTPError as e:
+            code=e.code; e.close()
+            if code in (401,403):
+                raise RuntimeError(f'Finnhub HTTP {code}: check Secret and IPO endpoint access') from None
+            if code not in (408,429,500,502,503,504) or attempt==2:
+                raise RuntimeError(f'Finnhub HTTP {code}') from None
+        except (OSError, URLError) as e:
+            if attempt==2: raise RuntimeError(f'Finnhub network error: {type(e).__name__}') from None
+        time.sleep((2,5)[attempt])
+
+def parse_finnhub(payload,cfg):
+    if not isinstance(payload,dict) or not isinstance(payload.get('ipoCalendar'),list):
+        raise ValueError('Invalid Finnhub IPO response: missing ipoCalendar list')
+    events=[]; withdrawn=set()
+    for row in payload['ipoCalendar']:
+        if not isinstance(row,dict): raise ValueError('Invalid Finnhub record')
+        ticker=str(row.get('symbol') or '').strip().upper()
+        name=str(row.get('name') or '').strip()
+        status=str(row.get('status') or '').strip().lower()
+        if not name or status not in ('expected','priced','withdrawn','filed'):
+            raise ValueError('Invalid Finnhub company or status')
+        if status=='withdrawn':
+            if ticker: withdrawn.add(ticker)
+            continue
+        # Filing dates are not IPO dates. Do not generate an event from them.
+        if status=='filed': continue
+        amount=number(row.get('totalSharesValue'))
+        if not eligible(name,ticker,row.get('exchange'),amount,cfg,row.get('dealType','')): continue
+        d=day(row.get('date'))
+        if not d: continue
+        events.append(dict(id='finnhub-'+(ticker or norm(name))+'-pricing', symbol=ticker,
+            name=name,date=d,kind='pricing',status=status,offer_usd=amount,
+            price=str(row.get('price') or ''),source=FINNHUB_PAGE))
+    return events,withdrawn
+
 def months(today):
     m=today.replace(day=1)
     for offset in (-1,0,1):
@@ -103,16 +160,18 @@ def combine(auto,withdrawn,cfg,today):
         if r['symbol'] in withdrawn: continue
         k=(r['symbol'],r['kind'])
         old=by.get(k)
-        if old and old['status']=='priced': continue
+        if old and old['status']=='priced' and old['source']!=FINNHUB_PAGE: continue
         # Nasdaq expected dates are not authoritative pricing vs debut dates.
         # Prefer a separately verified issuer timetable if the provider date
         # agrees with either milestone; if it disagrees with both, do not
         # silently publish a stale issuer timetable.
         pricing=by.get((r['symbol'],'pricing'))
         related=[x['date'] for x in cfg['manual_events'] if x['symbol']==r['symbol']]
+        if pricing and pricing['source']==FINNHUB_PAGE and pricing['date'] not in related and r['status']=='expected':
+            continue
         if pricing and pricing['status']=='expected' and pricing['source']==NASDAQ_PAGE and pricing['date'] not in related:
             continue
-        if r['kind']=='listing' and pricing and pricing['status']=='priced':
+        if r['kind']=='listing' and pricing and pricing['status']=='priced' and pricing['source']!=FINNHUB_PAGE:
             manual_price=next((x['date'] for x in cfg['manual_events'] if x['symbol']==r['symbol'] and x['kind']=='pricing'),None)
             if manual_price and pricing['date']!=manual_price:
                 continue
@@ -139,10 +198,11 @@ def render(events,stamp):
         # Stable symbol+stage UID across date changes and manual/automatic sources.
         uid=hashlib.sha256((r['symbol'] or norm(r['name'])).encode()).hexdigest()[:24]+'-'+r['kind']+'@major-ipo-calendar'
         if uid in seen: raise ValueError('Duplicate UID')
-        seen.add(uid); d=date.fromisoformat(r['date']); tentative=r['status']=='expected'
-        label='Calendar Date' if tentative and r['source']==NASDAQ_PAGE else r['kind'].title()
-        title=f"Major IPO: {r['name']} ({r['symbol'] or 'TBD'}) — {label}"+(' [Expected]' if tentative else '')
+        seen.add(uid); d=date.fromisoformat(r['date']); tentative=r['status']=='expected' or r['source']==FINNHUB_PAGE
+        label='Calendar Date' if r['source']==FINNHUB_PAGE or (tentative and r['source']==NASDAQ_PAGE) else r['kind'].title()
+        title=f"Major IPO: {r['name']} ({r['symbol'] or 'TBD'}) — {label}"+(' [Priced; Date Unverified]' if r['source']==FINNHUB_PAGE and r['status']=='priced' else ' [Expected]' if tentative else '')
         desc=f"Status: {r['status']}. Date is subject to change. No specific trading time is asserted."
+        if r['source']==FINNHUB_PAGE: desc+=' Finnhub IPO calendar date; pricing and first trade may differ.'
         if tentative and r['source']==NASDAQ_PAGE: desc+=' Nasdaq expected date; pricing and first trade may differ.'
         if r.get('offer_usd'): desc+=f"\nIndicative/Reported offer amount: USD {r['offer_usd']:,.0f} (provider methodology may include overallotment)."
         if r.get('price'): desc+='\nPrice: '+r['price']
@@ -158,8 +218,10 @@ def main():
     cfg=read_json(ROOT/'config.json'); now=datetime.now(timezone.utc); today=now.astimezone(ET).date()
     auto=[]; withdrawn=set()
     if not args.seed:
+        token=os.environ.get('FINNHUB_API_KEY','').strip()
+        if not token: raise RuntimeError('Missing FINNHUB_API_KEY GitHub Actions secret')
         for m in months(today):
-            a,w,_=parse_nasdaq(fetch_month(m),cfg);auto+=a;withdrawn|=w
+            a,w=parse_finnhub(fetch_finnhub(m,token),cfg);auto+=a;withdrawn|=w
     rows=combine(auto,withdrawn,cfg,today)
     # Full validation occurs before replacing any output. Seed is explicitly not a live audit.
     stamp=now.strftime('%Y%m%dT%H%M%SZ'); old=ROOT/'dates.json'
@@ -167,7 +229,7 @@ def main():
         prev=read_json(old)
         if prev.get('events')==rows: stamp=prev['stamp']
     ics=render(rows,stamp)
-    status={'status':'seed' if args.seed else 'ok','checked_at_utc':now.isoformat(),'source':'manual SEC filings' if args.seed else 'Nasdaq IPO calendar','event_count':len(rows),'sha256':hashlib.sha256(ics).hexdigest()}
+    status={'status':'seed' if args.seed else 'ok','checked_at_utc':now.isoformat(),'source':'manual SEC filings' if args.seed else 'Finnhub IPO calendar','event_count':len(rows),'sha256':hashlib.sha256(ics).hexdigest()}
     write(ROOT/'major-ipo.ics',ics);write(old,(json.dumps({'stamp':stamp,'events':rows},indent=2)+'\n').encode());write(ROOT/'source_status.json',(json.dumps(status,indent=2)+'\n').encode())
     print(f'{len(rows)} major IPO events; source status={status["status"]}')
 if __name__=='__main__':main()
