@@ -1,0 +1,12 @@
+{
+  "checked_at_utc": "2026-11-16T02:34:54+00:00",
+  "calendar_url": "https://raw.githubusercontent.com/rickeylau/major-ipo-calendar/main/major-ipo.ics",
+  "sha256": "4d0023e9cc4414958284eeaeb594a2e4366ca2ab86549341cfd1a833f73d5285",
+  "event_count": 2,
+  "unique_uid_count": 2,
+  "events_today_or_later": 2,
+  "first_event_date": "2026-11-18",
+  "last_event_date": "2026-11-19",
+  "status": "ok",
+  "warnings": []
+}
