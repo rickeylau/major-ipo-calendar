@@ -5,24 +5,23 @@ CALSCALE:GREGORIAN
 X-WR-CALNAME:Major IPO Calendar
 BEGIN:VEVENT
 UID:88886033384749b1394576ff-pricing@major-ipo-calendar
-DTSTAMP:20261116T021053Z
-DTSTART;VALUE=DATE:20261118
-DTEND;VALUE=DATE:20261119
-SUMMARY:Major IPO: Anthropic (ANT) — Pricing [Expected]
+DTSTAMP:20261119T092050Z
+DTSTART;VALUE=DATE:20261119
+DTEND;VALUE=DATE:20261120
+SUMMARY:Major IPO: ANTHROPIC\, PBC (ANT) — Calendar Date [Expected]
 DESCRIPTION:Status: expected. Date is subject to change. No specific tradin
- g time is asserted.\nIndicative/Reported offer amount: USD 61\,050\,000\,0
- 00 (provider methodology may include overallotment).\nPrice: 70–78 USD\n
- Source: https://www.sec.gov/Archives/edgar/data/2130357/000162828026073040
- /anthropicpbc-fwpxeeaprospea.htm\nVerify issuer announcement before tradin
- g.
-URL:https://www.sec.gov/Archives/edgar/data/2130357/000162828026073040/anth
- ropicpbc-fwpxeeaprospea.htm
+ g time is asserted. Finnhub IPO calendar date\; pricing and first trade ma
+ y differ.\nIndicative/Reported offer amount: USD 74\,002\,500\,000 (provid
+ er methodology may include overallotment).\nPrice: 70.00-78.00\nSource: ht
+ tps://finnhub.io/docs/api/ipo-calendar\nVerify issuer announcement before 
+ trading.
+URL:https://finnhub.io/docs/api/ipo-calendar
 STATUS:TENTATIVE
 TRANSP:TRANSPARENT
 END:VEVENT
 BEGIN:VEVENT
 UID:88886033384749b1394576ff-listing@major-ipo-calendar
-DTSTAMP:20261116T021053Z
+DTSTAMP:20261119T092050Z
 DTSTART;VALUE=DATE:20261119
 DTEND;VALUE=DATE:20261120
 SUMMARY:Major IPO: Anthropic (ANT) — Listing [Expected]
