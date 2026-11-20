@@ -1,17 +1,4 @@
 {
-  "stamp": "20261120T024010Z",
-  "events": [
-    {
-      "id": "anthropic-listing",
-      "symbol": "ANT",
-      "name": "Anthropic",
-      "date": "2026-11-19",
-      "kind": "listing",
-      "status": "expected",
-      "offer_usd": 61050000000,
-      "price": "70\u201378 USD",
-      "source": "https://www.sec.gov/Archives/edgar/data/2130357/000162828026073040/anthropicpbc-fwpxeeaprospea.htm",
-      "verified_on": "2026-11-16"
-    }
-  ]
+  "stamp": "20261120T092102Z",
+  "events": []
 }

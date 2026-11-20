@@ -3,21 +3,4 @@ VERSION:2.0
 PRODID:-//Major IPO Calendar//EN
 CALSCALE:GREGORIAN
 X-WR-CALNAME:Major IPO Calendar
-BEGIN:VEVENT
-UID:88886033384749b1394576ff-listing@major-ipo-calendar
-DTSTAMP:20261120T024010Z
-DTSTART;VALUE=DATE:20261119
-DTEND;VALUE=DATE:20261120
-SUMMARY:Major IPO: Anthropic (ANT) — Listing [Expected]
-DESCRIPTION:Status: expected. Date is subject to change. No specific tradin
- g time is asserted.\nIndicative/Reported offer amount: USD 61\,050\,000\,0
- 00 (provider methodology may include overallotment).\nPrice: 70–78 USD\n
- Source: https://www.sec.gov/Archives/edgar/data/2130357/000162828026073040
- /anthropicpbc-fwpxeeaprospea.htm\nVerify issuer announcement before tradin
- g.
-URL:https://www.sec.gov/Archives/edgar/data/2130357/000162828026073040/anth
- ropicpbc-fwpxeeaprospea.htm
-STATUS:TENTATIVE
-TRANSP:TRANSPARENT
-END:VEVENT
 END:VCALENDAR
