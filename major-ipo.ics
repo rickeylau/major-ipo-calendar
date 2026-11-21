@@ -3,4 +3,20 @@ VERSION:2.0
 PRODID:-//Major IPO Calendar//EN
 CALSCALE:GREGORIAN
 X-WR-CALNAME:Major IPO Calendar
+BEGIN:VEVENT
+UID:88886033384749b1394576ff-pricing@major-ipo-calendar
+DTSTAMP:20261121T025158Z
+DTSTART;VALUE=DATE:20261119
+DTEND;VALUE=DATE:20261120
+SUMMARY:Major IPO: Anthropic\, PBC (ANT) — Calendar Date [Priced\; Date U
+ nverified]
+DESCRIPTION:Status: priced. Date is subject to change. No specific trading 
+ time is asserted. Finnhub IPO calendar date\; pricing and first trade may 
+ differ.\nIndicative/Reported offer amount: USD 81\,340\,000\,000 (provider
+  methodology may include overallotment).\nPrice: 83.00\nSource: https://fi
+ nnhub.io/docs/api/ipo-calendar\nVerify issuer announcement before trading.
+URL:https://finnhub.io/docs/api/ipo-calendar
+STATUS:TENTATIVE
+TRANSP:TRANSPARENT
+END:VEVENT
 END:VCALENDAR
